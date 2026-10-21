@@ -74,10 +74,9 @@
       border-radius: 8px;
       margin-bottom: 10px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      transition: background 0.2s ease, transform 0.1s ease;
+      transition: background 0.2s ease;
     }
 
     .song-item:hover {
@@ -107,64 +106,14 @@
 
     <!-- Lista de Canciones -->
     <ul class="playlist" id="playlist">
-      <!-- Les cançons es generen automàticament -->
     </ul>
   </div>
 
   <script>
-    // Recomanació: Utilitza guions baixos '_' en lloc d'espais en els noms de fitxer
+    // Rutes exactes de les cançons que tens a la carpeta "musica/"
     const arxiusMP3 = [
-      "musica/Alberto_balsalm.mp3",
-      "musica/cancion2.mp3",
-      "musica/Mi_Cancion_Favorita.mp3"
+      "musica/Alberto_balsalm.mp3"
     ];
 
-    // Funció per extreure el títol net del nom del fitxer
     function extreureTitol(ruta) {
       const nomArxiu = ruta.split('/').pop();
-      const senseExtensio = nomArxiu.replace(/\.[^/.]+$/, "");
-      return decodeURIComponent(senseExtensio).replace(/[_]/g, ' ');
-    }
-
-    const canciones = arxiusMP3.map(ruta => ({
-      titulo: extreureTitol(ruta),
-      archivo: encodeURI(ruta) // Assegura que la URL sigui vàlida si té espais o caràcters especials
-    }));
-
-    const audioPlayer = document.getElementById('audio-player');
-    const currentTitle = document.getElementById('current-title');
-    const playlistElement = document.getElementById('playlist');
-
-    // Carregar la llista en l'HTML (Sense el botó de descarregar)
-    canciones.forEach((cancion, index) => {
-      const li = document.createElement('li');
-      li.className = 'song-item';
-      li.innerHTML = `<span>▶ ${cancion.titulo}</span>`;
-
-      // Event per reproduir al fer clic a qualsevol part del quadre
-      li.addEventListener('click', () => {
-        reproducirCancion(index);
-      });
-
-      playlistElement.appendChild(li);
-    });
-
-    function reproducirCancion(index) {
-      const cancion = canciones[index];
-      audioPlayer.src = cancion.archivo;
-      currentTitle.textContent = cancion.titulo;
-      
-      // Actualitzar l'estat actiu a la llista
-      const items = document.querySelectorAll('.song-item');
-      items.forEach(item => item.classList.remove('active'));
-      items[index].classList.add('active');
-
-      // Iniciar la reproducció
-      audioPlayer.play().catch(error => {
-        console.error("Error en reproduir l'àudio:", error);
-        alert("No s'ha pogut carregar l'àudio. Comprova que la ruta de l'arxiu i el nom siguin correctes.");
-      });
-    }
-  </script>
-</body>
-</html>
