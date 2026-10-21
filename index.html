@@ -70,14 +70,14 @@
 
     .song-item {
       background-color: var(--card-bg);
-      padding: 12px 16px;
+      padding: 14px 18px;
       border-radius: 8px;
       margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      transition: background 0.2s ease;
+      transition: background 0.2s ease, transform 0.1s ease;
     }
 
     .song-item:hover {
@@ -87,20 +87,7 @@
     .song-item.active {
       border-left: 4px solid var(--accent-color);
       color: var(--accent-color);
-    }
-
-    .download-link {
-      color: var(--secondary-text);
-      text-decoration: none;
-      font-size: 0.85em;
-      padding: 4px 8px;
-      border: 1px solid var(--secondary-text);
-      border-radius: 4px;
-    }
-
-    .download-link:hover {
-      color: var(--text-color);
-      border-color: var(--text-color);
+      font-weight: bold;
     }
   </style>
 </head>
@@ -120,45 +107,41 @@
 
     <!-- Lista de Canciones -->
     <ul class="playlist" id="playlist">
-      <!-- Les cançons es generen automàticament des del JS -->
+      <!-- Les cançons es generen automàticament -->
     </ul>
   </div>
 
   <script>
-    // 1. Només has de posar aquí la ruta dels teus fitxers MP3
+    // Recomanació: Utilitza guions baixos '_' en lloc d'espais en els noms de fitxer
     const arxiusMP3 = [
       "musica/Alberto_balsalm.mp3",
       "musica/cancion2.mp3",
       "musica/Mi_Cancion_Favorita.mp3"
     ];
 
-    // Funció per generar el títol automàticament des del nom del fitxer
+    // Funció per extreure el títol net del nom del fitxer
     function extreureTitol(ruta) {
-      const nomArxiu = ruta.split('/').pop();               // Agafa "Mi_Cancion_Favorita.mp3"
-      const senseExtensio = nomArxiu.replace(/\.[^/.]+$/, ""); // Neteja l'extensió (.mp3)
-      return senseExtensio.replace(/[_]/g, ' ');           // Reemplaça els guions baixos per espais
+      const nomArxiu = ruta.split('/').pop();
+      const senseExtensio = nomArxiu.replace(/\.[^/.]+$/, "");
+      return decodeURIComponent(senseExtensio).replace(/[_]/g, ' ');
     }
 
-    // Convertim les rutes en un array d'objectes amb títol i arxiu
     const canciones = arxiusMP3.map(ruta => ({
       titulo: extreureTitol(ruta),
-      archivo: ruta
+      archivo: encodeURI(ruta) // Assegura que la URL sigui vàlida si té espais o caràcters especials
     }));
 
     const audioPlayer = document.getElementById('audio-player');
     const currentTitle = document.getElementById('current-title');
     const playlistElement = document.getElementById('playlist');
 
-    // Cargar la lista en el HTML
+    // Carregar la llista en l'HTML (Sense el botó de descarregar)
     canciones.forEach((cancion, index) => {
       const li = document.createElement('li');
       li.className = 'song-item';
-      li.innerHTML = `
-        <span>${cancion.titulo}</span>
-        <a href="${cancion.archivo}" download class="download-link" onclick="event.stopPropagation()">Descargar</a>
-      `;
+      li.innerHTML = `<span>▶ ${cancion.titulo}</span>`;
 
-      // Evento para reproducir al hacer clic en la canción
+      // Event per reproduir al fer clic a qualsevol part del quadre
       li.addEventListener('click', () => {
         reproducirCancion(index);
       });
@@ -171,12 +154,16 @@
       audioPlayer.src = cancion.archivo;
       currentTitle.textContent = cancion.titulo;
       
-      // Actualizar clase 'active' en la lista
+      // Actualitzar l'estat actiu a la llista
       const items = document.querySelectorAll('.song-item');
       items.forEach(item => item.classList.remove('active'));
       items[index].classList.add('active');
 
-      audioPlayer.play();
+      // Iniciar la reproducció
+      audioPlayer.play().catch(error => {
+        console.error("Error en reproduir l'àudio:", error);
+        alert("No s'ha pogut carregar l'àudio. Comprova que la ruta de l'arxiu i el nom siguin correctes.");
+      });
     }
   </script>
 </body>
