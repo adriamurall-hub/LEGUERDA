@@ -120,22 +120,30 @@
 
     <!-- Lista de Canciones -->
     <ul class="playlist" id="playlist">
-      <!-- Las canciones se configuran en el array de JS más abajo -->
+      <!-- Les cançons es generen automàticament des del JS -->
     </ul>
   </div>
 
   <script>
-    // 1. Añade aquí la lista de tus canciones almacenadas en el repositorio
-    const canciones = [
-      {
-        titulo: "Canción de Ejemplo 1",
-        archivo: "musica/cancion1.mp3"
-      },
-      {
-        titulo: "Canción de Ejemplo 2",
-        archivo: "musica/cancion2.mp3"
-      }
+    // 1. Només has de posar aquí la ruta dels teus fitxers MP3
+    const arxiusMP3 = [
+      "musica/cancion1.mp3",
+      "musica/cancion2.mp3",
+      "musica/Mi_Cancion_Favorita.mp3"
     ];
+
+    // Funció per generar el títol automàticament des del nom del fitxer
+    function extreureTitol(ruta) {
+      const nomArxiu = ruta.split('/').pop();               // Agafa "Mi_Cancion_Favorita.mp3"
+      const senseExtensio = nomArxiu.replace(/\.[^/.]+$/, ""); // Neteja l'extensió (.mp3)
+      return senseExtensio.replace(/[_]/g, ' ');           // Reemplaça els guions baixos per espais
+    }
+
+    // Convertim les rutes en un array d'objectes amb títol i arxiu
+    const canciones = arxiusMP3.map(ruta => ({
+      titulo: extreureTitol(ruta),
+      archivo: ruta
+    }));
 
     const audioPlayer = document.getElementById('audio-player');
     const currentTitle = document.getElementById('current-title');
@@ -146,30 +154,4 @@
       const li = document.createElement('li');
       li.className = 'song-item';
       li.innerHTML = `
-        <span>${cancion.titulo}</span>
-        <a href="${cancion.archivo}" download class="download-link" onclick="event.stopPropagation()">Descargar</a>
-      `;
-
-      // Evento para reproducir al hacer clic en la canción
-      li.addEventListener('click', () => {
-        reproducirCancion(index);
-      });
-
-      playlistElement.appendChild(li);
-    });
-
-    function reproducirCancion(index) {
-      const cancion = canciones[index];
-      audioPlayer.src = cancion.archivo;
-      currentTitle.textContent = cancion.titulo;
-      
-      // Actualizar clase 'active' en la lista
-      const items = document.querySelectorAll('.song-item');
-      items.forEach(item => item.classList.remove('active'));
-      items[index].classList.add('active');
-
-      audioPlayer.play();
-    }
-  </script>
-</body>
-</html>
+        <span>${
