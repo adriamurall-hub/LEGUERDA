@@ -110,10 +110,44 @@
   </div>
 
   <script>
-    // Rutes exactes de les cançons que tens a la carpeta "musica/"
+    // Rutas de las canciones en tu carpeta "musica/"
     const arxiusMP3 = [
       "musica/Alberto_balsalm.mp3"
+      // Puedes añadir más canciones aquí separadas por comas, ej:
+      // "musica/Otra_Cancion.mp3"
     ];
 
+    const audioPlayer = document.getElementById('audio-player');
+    const currentTitle = document.getElementById('current-title');
+    const playlist = document.getElementById('playlist');
+
+    // Función para limpiar la ruta y obtener un título legible
     function extreureTitol(ruta) {
-      const nomArxiu = ruta.split('/').pop();
+      const nomArxiu = ruta.split('/').pop(); // Obtiene solo el nombre con extensión
+      return nomArxiu.replace('.mp3', '').replace(/_/g, ' '); // Quita ".mp3" y cambia "_" por espacios
+    }
+
+    // Generar la lista de canciones dinámicamente
+    arxiusMP3.forEach((ruta, index) => {
+      const li = document.createElement('li');
+      li.className = 'song-item';
+      li.textContent = extreureTitol(ruta);
+
+      li.addEventListener('click', () => {
+        // Asignar ruta al reproductor y reproducir
+        audioPlayer.src = ruta;
+        audioPlayer.play();
+
+        // Actualizar título
+        currentTitle.textContent = extreureTitol(ruta);
+
+        // Cambiar la clase activa
+        document.querySelectorAll('.song-item').forEach(item => item.classList.remove('active'));
+        li.classList.add('active');
+      });
+
+      playlist.appendChild(li);
+    });
+  </script>
+</body>
+</html>
