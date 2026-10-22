@@ -1,39 +1,126 @@
-<script>
-  // Rutas de las canciones en tu carpeta "musica/"
-  const arxiusMP3 = [
-    "musica/Alberto_balsalm.mp3"
-  ];
-
-  // Ejecutamos el código una vez cargado todo el DOM
-  document.addEventListener('DOMContentLoaded', () => {
-    const audioPlayer = document.getElementById('audio-player');
-    const currentTitle = document.getElementById('current-title');
-    const playlist = document.getElementById('playlist');
-
-    // Función para extraer y limpiar el nombre
-    function extreureTitol(ruta) {
-      const nomArxiu = ruta.split('/').pop();
-      return nomArxiu.replace('.mp3', '').replace(/_/g, ' ');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Colección de Música</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #ffffff;
+      --accent-color: #1db954;
+      --secondary-text: #b3b3b3;
     }
 
-    // Comprobar que la lista existe en el DOM
-    if (playlist) {
-      arxiusMP3.forEach((ruta) => {
-        const li = document.createElement('li');
-        li.className = 'song-item';
-        li.textContent = extreureTitol(ruta);
-
-        li.addEventListener('click', () => {
-          audioPlayer.src = ruta;
-          audioPlayer.play();
-          currentTitle.textContent = extreureTitol(ruta);
-
-          document.querySelectorAll('.song-item').forEach(item => item.classList.remove('active'));
-          li.classList.add('active');
-        });
-
-        playlist.appendChild(li);
-      });
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-  });
-</script>
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .player-card {
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .now-playing {
+      font-size: 0.9em;
+      color: var(--secondary-text);
+      margin-bottom: 5px;
+    }
+
+    .song-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    audio {
+      width: 100%;
+      outline: none;
+    }
+
+    .playlist {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .song-item {
+      background-color: var(--card-bg);
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .song-item:hover {
+      background-color: #2a2a2a;
+    }
+
+    .song-item.active {
+      border-left: 4px solid var(--accent-color);
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>LEGUERDA-MU</h1>
+
+    <div class="player-card">
+      <div class="now-playing">Reproduciendo ahora:</div>
+      <div class="song-title" id="current-title">Selecciona una canción</div>
+      <audio id="audio-player" controls>
+        Tu navegador no soporta el elemento de audio.
+      </audio>
+    </div>
+
+    <!-- Canciones añadidas directamente en HTML -->
+    <ul class="playlist" id="playlist">
+      <li class="song-item" onclick="reproducir('musica/Alberto_balsalm.mp3', 'Alberto balsalm')">
+        Alberto balsalm
+      </li>
+    </ul>
+  </div>
+
+  <script>
+    function reproducir(ruta, titulo) {
+      const audioPlayer = document.getElementById('audio-player');
+      const currentTitle = document.getElementById('current-title');
+
+      audioPlayer.src = ruta;
+      audioPlayer.play();
+      currentTitle.textContent = titulo;
+
+      document.querySelectorAll('.song-item').forEach(item => item.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+    }
+  </script>
+</body>
+</html>
