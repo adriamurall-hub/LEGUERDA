@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Colección de Música</title>
+  <title>LEGUERDA-MU | Reproductor de Música</title>
   <style>
     :root {
       --bg-color: #121212;
@@ -11,59 +11,80 @@
       --text-color: #ffffff;
       --accent-color: #1db954;
       --secondary-text: #b3b3b3;
+      --hover-bg: #2a2a2a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
-      margin: 0;
-      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
     }
 
     .container {
       width: 100%;
-      max-width: 600px;
+      max-width: 500px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      letter-spacing: 2px;
+      font-size: 2em;
     }
 
+    /* Reproductor Principal */
     .player-card {
       background-color: var(--card-bg);
-      padding: 20px;
+      padding: 24px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
       margin-bottom: 25px;
       text-align: center;
     }
 
     .now-playing {
-      font-size: 0.9em;
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       color: var(--secondary-text);
-      margin-bottom: 5px;
+      margin-bottom: 8px;
     }
 
     .song-title {
-      font-size: 1.2em;
+      font-size: 1.3em;
       font-weight: bold;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
+      color: var(--text-color);
+      word-break: break-word;
     }
 
     audio {
       width: 100%;
+      border-radius: 8px;
       outline: none;
+    }
+
+    /* Lista de Canciones */
+    .playlist-title {
+      font-size: 1em;
+      color: var(--secondary-text);
+      margin-bottom: 12px;
+      padding-left: 5px;
     }
 
     .playlist {
       list-style: none;
-      padding: 0;
-      margin: 0;
     }
 
     .song-item {
@@ -73,18 +94,27 @@
       margin-bottom: 10px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       cursor: pointer;
-      transition: background 0.2s ease;
+      transition: all 0.2s ease;
+      border-left: 4px solid transparent;
     }
 
     .song-item:hover {
-      background-color: #2a2a2a;
+      background-color: var(--hover-bg);
+      transform: translateY(-2px);
     }
 
     .song-item.active {
-      border-left: 4px solid var(--accent-color);
+      border-left-color: var(--accent-color);
       color: var(--accent-color);
       font-weight: bold;
+      background-color: var(--hover-bg);
+    }
+
+    .play-icon {
+      font-size: 0.9em;
+      opacity: 0.7;
     }
   </style>
 </head>
@@ -93,34 +123,34 @@
   <div class="container">
     <h1>LEGUERDA-MU</h1>
 
+    <!-- Reproductor Principal -->
     <div class="player-card">
-      <div class="now-playing">Reproduciendo ahora:</div>
+      <div class="now-playing">Reproduciendo ahora</div>
       <div class="song-title" id="current-title">Selecciona una canción</div>
-      <audio id="audio-player" controls>
-        Tu navegador no soporta el elemento de audio.
+      <audio id="audio-player" controls preload="metadata">
+        Tu navegador no soporta el reproductor de audio.
       </audio>
     </div>
 
-    <!-- Canciones añadidas directamente en HTML -->
+    <!-- Lista de Canciones -->
+    <div class="playlist-title">Lista de reproducción</div>
     <ul class="playlist" id="playlist">
-      <li class="song-item" onclick="reproducir('LEGUERDA/musica/Alberto_balsalm.mp3', 'Alberto balsalm')">
-        Alberto balsalm
-      </li>
+      <!-- Las canciones se cargarán automáticamente con JavaScript -->
     </ul>
   </div>
 
   <script>
-    function reproducir(ruta, titulo) {
+    // 1. Añade aquí tus canciones (ruta relativa dentro del repositorio)
+    const cancons = [
+      "musica/Alberto_balsalm.mp3"
+      // Para añadir más en el futuro, pon una coma y la siguiente ruta:
+      // , "musica/Otra_Cancion.mp3"
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
       const audioPlayer = document.getElementById('audio-player');
       const currentTitle = document.getElementById('current-title');
+      const playlist = document.getElementById('playlist');
 
-      audioPlayer.src = ruta;
-      audioPlayer.play();
-      currentTitle.textContent = titulo;
-
-      document.querySelectorAll('.song-item').forEach(item => item.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-    }
-  </script>
-</body>
-</html>
+      // Limpia el nombre del archivo para mostrarlo como título
+      function formatejarTitol(ruta) {
