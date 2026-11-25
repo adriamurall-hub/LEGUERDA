@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -75,14 +75,47 @@
       outline: none;
     }
 
-    /* Lista de Canciones */
-    .playlist-title {
+    /* Carpetes */
+    .section-title {
       font-size: 1em;
       color: var(--secondary-text);
       margin-bottom: 12px;
       padding-left: 5px;
     }
 
+    .folders-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .folder-btn {
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      border: 1px solid #333;
+      padding: 10px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.95em;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .folder-btn:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .folder-btn.active {
+      background-color: var(--accent-color);
+      color: #000000;
+      font-weight: bold;
+      border-color: var(--accent-color);
+    }
+
+    /* Lista de Canciones */
     .playlist {
       list-style: none;
     }
@@ -125,32 +158,77 @@
 
     <!-- Reproductor Principal -->
     <div class="player-card">
-      <div class="now-playing">Reproduciendo ahora</div>
-      <div class="song-title" id="current-title">Selecciona una canción</div>
+      <div class="now-playing">Reproduint ara</div>
+      <div class="song-title" id="current-title">Selecciona una cançó</div>
       <audio id="audio-player" controls preload="metadata">
-        Tu navegador no soporta el reproductor de audio.
+        El teu navegador no suporta el reproductor d'àudio.
       </audio>
     </div>
 
-    <!-- Lista de Canciones -->
-    <div class="playlist-title">Lista de reproducción</div>
+    <!-- Selector de Carpetes -->
+    <div class="section-title">Carpetes</div>
+    <div class="folders-grid" id="folders-container">
+      <!-- Les carpetes es carregaran aquí -->
+    </div>
+
+    <!-- Llista de Cançons -->
+    <div class="section-title" id="playlist-header">Llista de reproducció</div>
     <ul class="playlist" id="playlist">
-      <!-- Las canciones se cargarán automáticamente con JavaScript -->
+      <!-- Les cançons de la carpeta seleccionada es carregaran aquí -->
     </ul>
   </div>
 
   <script>
-    // 1. Añade aquí tus canciones (ruta relativa dentro del repositorio)
-    const cancons = [
-      "musica/Alberto_balsalm.mp3"
-      // Para añadir más en el futuro, pon una coma y la siguiente ruta:
-      // , "musica/Otra_Cancion.mp3"
-    ];
+    // 1. Organitza aquí les teves carpetes i les rutes de les cançons
+    const biblioteca = {
+      "General": [
+        "musica/Alberto_balsalm.mp3"
+      ],
+      "Electrònica": [
+        // Exemple: "musica/electronica/tema1.mp3",
+        // "musica/electronica/tema2.mp3"
+      ],
+      "Favorits": [
+        // Exemple: "musica/favorits/canco.mp3"
+      ]
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
       const audioPlayer = document.getElementById('audio-player');
       const currentTitle = document.getElementById('current-title');
+      const foldersContainer = document.getElementById('folders-container');
       const playlist = document.getElementById('playlist');
+      const playlistHeader = document.getElementById('playlist-header');
 
-      // Limpia el nombre del archivo para mostrarlo como título
+      let carpetaActual = Object.keys(biblioteca)[0];
+      let rutaReproduint = null;
+
+      // Neteja el nom del fitxer per mostrar-lo bonic
       function formatejarTitol(ruta) {
+        const nomFitxer = ruta.split('/').pop(); // Agafa només el nom final (ex: Alberto_balsalm.mp3)
+        return nomFitxer
+          .replace(/\.[^/.]+$/, "") // Treu l'extensió (.mp3, .wav, etc.)
+          .replace(/_/g, " ");      // Canvia guions baixos per espais
+      }
+
+      // Renderitza els botons de les carpetes
+      function carregarCarpetes() {
+        foldersContainer.innerHTML = '';
+        Object.keys(biblioteca).forEach(nomCarpeta => {
+          const btn = document.createElement('button');
+          btn.className = 'folder-btn' + (nomCarpeta === carpetaActual ? ' active' : '');
+          btn.innerHTML = `📁 ${nomCarpeta}`;
+          
+          btn.addEventListener('click', () => {
+            carpetaActual = nomCarpeta;
+            carregarCarpetes();
+            carregarCancons(nomCarpeta);
+          });
+
+          foldersContainer.appendChild(btn);
+        });
+      }
+
+      // Renderitza les cançons de la carpeta seleccionada
+      function carregarCancons(nomCarpeta) {
+        playlist.innerHTML = '';
