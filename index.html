@@ -33,7 +33,7 @@
 
     .container {
       width: 100%;
-      max-width: 500px;
+      max-width: 550px;
     }
 
     h1 {
@@ -49,7 +49,7 @@
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-      margin-bottom: 25px;
+      margin-bottom: 30px;
       text-align: center;
     }
 
@@ -75,79 +75,109 @@
       outline: none;
     }
 
-    /* Carpetes */
-    .section-title {
-      font-size: 1em;
-      color: var(--secondary-text);
-      margin-bottom: 12px;
-      padding-left: 5px;
-    }
-
-    .folders-grid {
+    /* Targetes d'Àlbums (Carpetes) */
+    .albums-list {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 25px;
+      flex-direction: column;
+      gap: 16px;
     }
 
-    .folder-btn {
+    .album-card {
       background-color: var(--card-bg);
-      color: var(--text-color);
-      border: 1px solid #333;
-      padding: 10px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.95em;
-      transition: all 0.2s ease;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.2s ease;
+    }
+
+    .album-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      gap: 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .album-cover {
+      width: 110px;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 6px;
+      background-color: #2a2a2a;
+      flex-shrink: 0;
+    }
+
+    .album-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 4px;
+      flex-grow: 1;
+    }
+
+    .album-title {
+      font-size: 1.35em;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .toggle-arrow {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: var(--text-color);
+      display: inline-block;
+      transition: transform 0.25s ease;
+      width: fit-content;
+    }
+
+    /* Fletxa cap amunt quan està obert (com al dibuix) i cap avall quan està tancat */
+    .album-card.collapsed .toggle-arrow {
+      transform: rotate(180deg);
+      color: var(--secondary-text);
+    }
+
+    /* Llista desplegable de cançons dins de l'àlbum */
+    .album-songs {
+      list-style: none;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
       gap: 6px;
     }
 
-    .folder-btn:hover {
-      background-color: var(--hover-bg);
-    }
-
-    .folder-btn.active {
-      background-color: var(--accent-color);
-      color: #000000;
-      font-weight: bold;
-      border-color: var(--accent-color);
-    }
-
-    /* Lista de Canciones */
-    .playlist {
-      list-style: none;
+    .album-card.collapsed .album-songs {
+      display: none;
     }
 
     .song-item {
-      background-color: var(--card-bg);
-      padding: 14px 18px;
-      border-radius: 8px;
-      margin-bottom: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.98em;
+      font-weight: 600;
+      color: var(--text-color);
+      transition: all 0.15s ease;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border-left: 4px solid transparent;
     }
 
     .song-item:hover {
       background-color: var(--hover-bg);
-      transform: translateY(-2px);
+      padding-left: 14px;
     }
 
     .song-item.active {
-      border-left-color: var(--accent-color);
       color: var(--accent-color);
-      font-weight: bold;
       background-color: var(--hover-bg);
     }
 
-    .play-icon {
-      font-size: 0.9em;
-      opacity: 0.7;
+    .loading-text {
+      text-align: center;
+      color: var(--secondary-text);
+      padding: 20px;
     }
   </style>
 </head>
@@ -165,70 +195,163 @@
       </audio>
     </div>
 
-    <!-- Selector de Carpetes -->
-    <div class="section-title">Carpetes</div>
-    <div class="folders-grid" id="folders-container">
-      <!-- Les carpetes es carregaran aquí -->
+    <!-- Contenidor d'Àlbums / Carpetes -->
+    <div class="albums-list" id="albums-container">
+      <div class="loading-text">Carregant carpetes des de GitHub...</div>
     </div>
-
-    <!-- Llista de Cançons -->
-    <div class="section-title" id="playlist-header">Llista de reproducció</div>
-    <ul class="playlist" id="playlist">
-      <!-- Les cançons de la carpeta seleccionada es carregaran aquí -->
-    </ul>
   </div>
 
   <script>
-    // 1. Organitza aquí les teves carpetes i les rutes de les cançons
-    const biblioteca = {
-      "General": [
-        "musica/Alberto_balsalm.mp3"
-      ],
-      "Electrònica": [
-        // Exemple: "musica/electronica/tema1.mp3",
-        // "musica/electronica/tema2.mp3"
-      ],
-      "Favorits": [
-        // Exemple: "musica/favorits/canco.mp3"
-      ]
-    };
+    // Configuració del teu repositori
+    const USUARI_GITHUB = 'adriamurall-hub';
+    const REPO_GITHUB = 'LEGUERDA';
+    const CARPETA_BASE = 'musica';
+
+    // Imatge per defecte si encara no has pujat portada.jpg dins la carpeta
+    const IMATGE_PER_DEFECTE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="%232a2a2a"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23777" font-family="sans-serif" font-size="36">🎵</text></svg>';
 
     document.addEventListener('DOMContentLoaded', () => {
       const audioPlayer = document.getElementById('audio-player');
       const currentTitle = document.getElementById('current-title');
-      const foldersContainer = document.getElementById('folders-container');
-      const playlist = document.getElementById('playlist');
-      const playlistHeader = document.getElementById('playlist-header');
+      const albumsContainer = document.getElementById('albums-container');
 
-      let carpetaActual = Object.keys(biblioteca)[0];
+      let llistaGlobalCancons = [];
       let rutaReproduint = null;
 
-      // Neteja el nom del fitxer per mostrar-lo bonic
-      function formatejarTitol(ruta) {
-        const nomFitxer = ruta.split('/').pop(); // Agafa només el nom final (ex: Alberto_balsalm.mp3)
-        return nomFitxer
-          .replace(/\.[^/.]+$/, "") // Treu l'extensió (.mp3, .wav, etc.)
-          .replace(/_/g, " ");      // Canvia guions baixos per espais
+      function formatejarNom(nom) {
+        return nom
+          .replace(/\.[^/.]+$/, "")
+          .replace(/_/g, " ");
       }
 
-      // Renderitza els botons de les carpetes
-      function carregarCarpetes() {
-        foldersContainer.innerHTML = '';
-        Object.keys(biblioteca).forEach(nomCarpeta => {
-          const btn = document.createElement('button');
-          btn.className = 'folder-btn' + (nomCarpeta === carpetaActual ? ' active' : '');
-          btn.innerHTML = `📁 ${nomCarpeta}`;
+      // Llegeix tota l'estructura de carpetes del repositori via API de GitHub
+      async function carregarDesdeGitHub() {
+        try {
+          const urlApi = `https://api.github.com/repos/${USUARI_GITHUB}/${REPO_GITHUB}/git/trees/main?recursive=1`;
+          const resposta = await fetch(urlApi);
+          if (!resposta.ok) throw new Error('No s’ha pogut connectar amb GitHub');
           
-          btn.addEventListener('click', () => {
-            carpetaActual = nomCarpeta;
-            carregarCarpetes();
-            carregarCancons(nomCarpeta);
+          const dades = await resposta.json();
+          const fitxers = dades.tree.filter(item => item.type === 'blob' && item.path.startsWith(CARPETA_BASE + '/'));
+
+          const albums = {};
+
+          fitxers.forEach(fitxer => {
+            const parts = fitxer.path.split('/'); 
+            // parts[0] = "musica"
+            // Si parts.length === 3 -> "musica/NomAlbum/arxiu.mp3"
+            // Si parts.length === 2 -> "musica/arxiu.mp3" (cançó solta)
+            
+            let nomCarpeta = parts.length >= 3 ? parts[1] : 'Cançons soltes';
+            const nomArxiu = parts[parts.length - 1];
+
+            if (!albums[nomCarpeta]) {
+              albums[nomCarpeta] = {
+                titol: formatejarNom(nomCarpeta),
+                portada: IMATGE_PER_DEFECTE,
+                cancons: []
+              };
+            }
+
+            // Detecta si és una imatge de portada
+            if (/\.(jpg|jpeg|png|webp)$/i.test(nomArxiu)) {
+              albums[nomCarpeta].portada = fitxer.path;
+            }
+            // Detecta si és un arxiu d'àudio
+            else if (/\.(mp3|wav|ogg|m4a)$/i.test(nomArxiu)) {
+              albums[nomCarpeta].cancons.push({
+                nom: formatejarNom(nomArxiu),
+                ruta: fitxer.path
+              });
+            }
           });
 
-          foldersContainer.appendChild(btn);
+          renderitzarAlbums(albums);
+        } catch (error) {
+          albumsContainer.innerHTML = `<div class="loading-text">Error carregant la música: ${error.message}</div>`;
+        }
+      }
+
+      function renderitzarAlbums(albums) {
+        albumsContainer.innerHTML = '';
+        llistaGlobalCancons = [];
+
+        const claus = Object.keys(albums);
+        if (claus.length === 0) {
+          albumsContainer.innerHTML = '<div class="loading-text">No s’han trobat cançons a la carpeta musica/</div>';
+          return;
+        }
+
+        claus.forEach(clau => {
+          const album = albums[clau];
+          if (album.cancons.length === 0) return;
+
+          // Creem la targeta rectangular de l'àlbum
+          const card = document.createElement('div');
+          card.className = 'album-card collapsed'; // Comença plegada; treu 'collapsed' si vols que comenci oberta
+
+          // Capçalera amb imatge + nom + fletxa ^
+          const header = document.createElement('div');
+          header.className = 'album-header';
+          header.innerHTML = `
+            <img class="album-cover" src="${album.portada}" alt="${album.titol}" onerror="this.src='${IMATGE_PER_DEFECTE}'">
+            <div class="album-info">
+              <div class="album-title">${album.titol}</div>
+              <span class="toggle-arrow">^</span>
+              <ul class="album-songs"></ul>
+            </div>
+          `;
+
+          const ulCancons = header.querySelector('.album-songs');
+
+          // Afegim les cançons amb el guió davant (-CANÇÓ 1) tal com a la imatge
+          album.cancons.forEach(canco => {
+            llistaGlobalCancons.push(canco);
+            const li = document.createElement('li');
+            li.className = 'song-item';
+            li.dataset.ruta = canco.ruta;
+            li.innerHTML = `<span>-${canco.nom}</span>`;
+
+            li.addEventListener('click', (e) => {
+              e.stopPropagation(); // Evita que es tanqui la carpeta en clicar una cançó
+              reproduirCanco(canco);
+            });
+
+            ulCancons.appendChild(li);
+          });
+
+          // Clicar sobre la targeta desplega o plega la llista de cançons
+          card.addEventListener('click', () => {
+            card.classList.toggle('collapsed');
+          });
+
+          card.appendChild(header);
+          albumsContainer.appendChild(card);
         });
       }
 
-      // Renderitza les cançons de la carpeta seleccionada
-      function carregarCancons(nomCarpeta) {
-        playlist.innerHTML = '';
+      function reproduirCanco(canco) {
+        rutaReproduint = canco.ruta;
+        audioPlayer.src = canco.ruta;
+        currentTitle.textContent = canco.nom;
+        audioPlayer.play();
+
+        // Marca en verd la cançó activa
+        document.querySelectorAll('.song-item').forEach(el => {
+          el.classList.toggle('active', el.dataset.ruta === canco.ruta);
+        });
+      }
+
+      // Passa a la següent cançó automàticament en acabar
+      audioPlayer.addEventListener('ended', () => {
+        const idx = llistaGlobalCancons.findIndex(c => c.ruta === rutaReproduint);
+        if (idx !== -1 && idx + 1 < llistaGlobalCancons.length) {
+          reproduirCanco(llistaGlobalCancons[idx + 1]);
+        }
+      });
+
+      carregarDesdeGitHub();
+    });
+  </script>
+</body>
+</html>
