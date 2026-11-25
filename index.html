@@ -69,6 +69,13 @@
       word-break: break-word;
     }
 
+    .error-msg {
+      color: #ff6b6b;
+      font-size: 0.85em;
+      margin-top: 10px;
+      display: none;
+    }
+
     audio {
       width: 100%;
       border-radius: 8px;
@@ -132,13 +139,11 @@
       width: fit-content;
     }
 
-    /* Fletxa cap amunt quan està obert (com al dibuix) i cap avall quan està tancat */
     .album-card.collapsed .toggle-arrow {
       transform: rotate(180deg);
       color: var(--secondary-text);
     }
 
-    /* Llista desplegable de cançons dins de l'àlbum */
     .album-songs {
       list-style: none;
       margin-top: 12px;
@@ -193,6 +198,7 @@
       <audio id="audio-player" controls preload="metadata">
         El teu navegador no suporta el reproductor d'àudio.
       </audio>
+      <div class="error-msg" id="error-msg">No s'ha pogut carregar l'àudio. Comprova que el fitxer no estigui buit o danyat.</div>
     </div>
 
     <!-- Contenidor d'Àlbums / Carpetes -->
@@ -202,18 +208,19 @@
   </div>
 
   <script>
-    // Configuració del teu repositori
     const USUARI_GITHUB = 'adriamurall-hub';
     const REPO_GITHUB = 'LEGUERDA';
+    const BRANCA = 'main';
     const CARPETA_BASE = 'musica';
 
-    // Imatge per defecte si encara no has pujat portada.jpg dins la carpeta
-    const IMATGE_PER_DEFECTE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="%232a2a2a"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23777" font-family="sans-serif" font-size="36">🎵</text></svg>';
+    // SVG net sense caràcters conflictius
+    const IMATGE_PER_DEFECTE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%232a2a2a'/%3E%3Ccircle cx='60' cy='60' r='24' fill='none' stroke='%23666' stroke-width='4'/%3E%3Ccircle cx='60' cy='60' r='6' fill='%23666'/%3E%3C/svg%3E";
 
     document.addEventListener('DOMContentLoaded', () => {
       const audioPlayer = document.getElementById('audio-player');
       const currentTitle = document.getElementById('current-title');
       const albumsContainer = document.getElementById('albums-container');
+      const errorMsg = document.getElementById('error-msg');
 
       let llistaGlobalCancons = [];
       let rutaReproduint = null;
@@ -224,10 +231,15 @@
           .replace(/_/g, " ");
       }
 
-      // Llegeix tota l'estructura de carpetes del repositori via API de GitHub
+      // Genera l'enllaç directe al fitxer al repositori de GitHub (evita esperes de GitHub Pages i problemes d'espais)
+      function obtenirUrlFitxer(rutaRelativa) {
+        const rutaCodificada = rutaRelativa.split('/').map(segment => encodeURIComponent(segment)).join('/');
+        return `https://raw.githubusercontent.com/${USUARI_GITHUB}/${REPO_GITHUB}/${BRANCA}/${rutaCodificada}`;
+      }
+
       async function carregarDesdeGitHub() {
         try {
-          const urlApi = `https://api.github.com/repos/${USUARI_GITHUB}/${REPO_GITHUB}/git/trees/main?recursive=1`;
+          const urlApi = `https://api.github.com/repos/${USUARI_GITHUB}/${REPO_GITHUB}/git/trees/${BRANCA}?recursive=1`;
           const resposta = await fetch(urlApi);
           if (!resposta.ok) throw new Error('No s’ha pogut connectar amb GitHub');
           
@@ -237,11 +249,7 @@
           const albums = {};
 
           fitxers.forEach(fitxer => {
-            const parts = fitxer.path.split('/'); 
-            // parts[0] = "musica"
-            // Si parts.length === 3 -> "musica/NomAlbum/arxiu.mp3"
-            // Si parts.length === 2 -> "musica/arxiu.mp3" (cançó solta)
-            
+            const parts = fitxer.path.split('/');
             let nomCarpeta = parts.length >= 3 ? parts[1] : 'Cançons soltes';
             const nomArxiu = parts[parts.length - 1];
 
@@ -253,15 +261,13 @@
               };
             }
 
-            // Detecta si és una imatge de portada
             if (/\.(jpg|jpeg|png|webp)$/i.test(nomArxiu)) {
-              albums[nomCarpeta].portada = fitxer.path;
-            }
-            // Detecta si és un arxiu d'àudio
-            else if (/\.(mp3|wav|ogg|m4a)$/i.test(nomArxiu)) {
+              albums[nomCarpeta].portada = obtenirUrlFitxer(fitxer.path);
+            } else if (/\.(mp3|wav|ogg|m4a)$/i.test(nomArxiu)) {
               albums[nomCarpeta].cancons.push({
                 nom: formatejarNom(nomArxiu),
-                ruta: fitxer.path
+                ruta: fitxer.path,
+                url: obtenirUrlFitxer(fitxer.path)
               });
             }
           });
@@ -286,25 +292,31 @@
           const album = albums[clau];
           if (album.cancons.length === 0) return;
 
-          // Creem la targeta rectangular de l'àlbum
           const card = document.createElement('div');
-          card.className = 'album-card collapsed'; // Comença plegada; treu 'collapsed' si vols que comenci oberta
+          card.className = 'album-card collapsed';
 
-          // Capçalera amb imatge + nom + fletxa ^
           const header = document.createElement('div');
           header.className = 'album-header';
-          header.innerHTML = `
-            <img class="album-cover" src="${album.portada}" alt="${album.titol}" onerror="this.src='${IMATGE_PER_DEFECTE}'">
-            <div class="album-info">
-              <div class="album-title">${album.titol}</div>
-              <span class="toggle-arrow">^</span>
-              <ul class="album-songs"></ul>
-            </div>
+
+          const img = document.createElement('img');
+          img.className = 'album-cover';
+          img.src = album.portada;
+          img.alt = album.titol;
+          img.onerror = () => { img.src = IMATGE_PER_DEFECTE; };
+
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'album-info';
+          infoDiv.innerHTML = `
+            <div class="album-title">${album.titol}</div>
+            <span class="toggle-arrow">^</span>
+            <ul class="album-songs"></ul>
           `;
 
-          const ulCancons = header.querySelector('.album-songs');
+          header.appendChild(img);
+          header.appendChild(infoDiv);
 
-          // Afegim les cançons amb el guió davant (-CANÇÓ 1) tal com a la imatge
+          const ulCancons = infoDiv.querySelector('.album-songs');
+
           album.cancons.forEach(canco => {
             llistaGlobalCancons.push(canco);
             const li = document.createElement('li');
@@ -313,14 +325,13 @@
             li.innerHTML = `<span>-${canco.nom}</span>`;
 
             li.addEventListener('click', (e) => {
-              e.stopPropagation(); // Evita que es tanqui la carpeta en clicar una cançó
+              e.stopPropagation();
               reproduirCanco(canco);
             });
 
             ulCancons.appendChild(li);
           });
 
-          // Clicar sobre la targeta desplega o plega la llista de cançons
           card.addEventListener('click', () => {
             card.classList.toggle('collapsed');
           });
@@ -331,18 +342,25 @@
       }
 
       function reproduirCanco(canco) {
+        errorMsg.style.display = 'none';
         rutaReproduint = canco.ruta;
-        audioPlayer.src = canco.ruta;
+        audioPlayer.src = canco.url;
         currentTitle.textContent = canco.nom;
-        audioPlayer.play();
+        
+        audioPlayer.play().catch(err => {
+          console.error('Error en reproduir:', err);
+          errorMsg.style.display = 'block';
+        });
 
-        // Marca en verd la cançó activa
         document.querySelectorAll('.song-item').forEach(el => {
           el.classList.toggle('active', el.dataset.ruta === canco.ruta);
         });
       }
 
-      // Passa a la següent cançó automàticament en acabar
+      audioPlayer.addEventListener('error', () => {
+        errorMsg.style.display = 'block';
+      });
+
       audioPlayer.addEventListener('ended', () => {
         const idx = llistaGlobalCancons.findIndex(c => c.ruta === rutaReproduint);
         if (idx !== -1 && idx + 1 < llistaGlobalCancons.length) {
